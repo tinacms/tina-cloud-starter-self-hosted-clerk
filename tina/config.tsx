@@ -6,7 +6,6 @@ import { testimonialBlockSchema } from "../components/blocks/testimonial";
 import { ColorPickerInput } from "./fields/color";
 import { iconSchema } from "../components/util/icon";
 import Clerk from "@clerk/clerk-js";
-import { neobrutalism, shadesOfPurple } from "@clerk/themes";
 
 const clerkPubKey = process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY;
 const clerk = new Clerk(clerkPubKey);
@@ -16,7 +15,7 @@ const clerk = new Clerk(clerkPubKey);
  * https://clerk.com/docs/authentication/allowlist
  */
 export const isUserAllowed = (emailAddress: string) => {
-  const allowList = ["jeffsee.55@gmail.com"];
+  const allowList = [process.env.TINA_PUBLIC_ALLOWED_EMAIL];
   if (allowList.includes(emailAddress)) {
     return true;
   }
@@ -60,6 +59,7 @@ const config = defineConfig({
       },
       getUser: async () => {
         await clerk.load();
+        console.log("info", clerk);
         if (clerk.user) {
           if (isUserAllowed(clerk.user.primaryEmailAddress.emailAddress)) {
             return true;
