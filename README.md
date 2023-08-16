@@ -22,8 +22,6 @@ Be sure to set the `TINA_PUBLIC_ALLOWED_EMAIL` env to the email you will use to 
 
 Visit [clerk.com](https://clerk.com/) to create an account and an "application". Once you've done that, navigate to the API Keys tab to find your credentials and store them in the .env file in your project.
 
-![Clerk API Keys screenshot](/img/clerk-api-keys-screenshot.png)
-
 ```
 yarn dev:prod
 ```
