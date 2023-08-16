@@ -2,21 +2,33 @@
 
 [Clerk](https://clerk.com) is a user management service which you can use for any self-hosted Tina setup.
 
-## Getting Started
+## Running Tina locally
+
+By default, Clerk auth will be used, to bypass it, set the .env variable accordingly:
+
+```
+echo "TINA_PUBLIC_IS_LOCAL=true" > .env
+```
+
+### Start the dev server
+
+```
+yarn dev
+```
+
+## Testing Clerk auth locally
+
+When you're ready to work with Clerk, copy the `.env.sample` file:
+
+```
+cp .env.sample .env
+```
+
+Be sure to set the `TINA_PUBLIC_ALLOWED_EMAIL` env to the email you will use to sign with.
 
 Visit [clerk.com](https://clerk.com/) to create an account and an "application". Once you've done that, navigate to the API Keys tab to find your credentials and store them in the .env file in your project.
 
 ![Clerk API Keys screenshot](/img/clerk-api-keys-screenshot.png)
-
-```bash
-CLERK_SECRET=sk_test_my-clerk-secret
-TINA_PUBLIC_CLERK_PUBLIC_KEY=pk_test_my-clerk-public-key
-TINA_PUBLIC_IS_LOCAL=false
-```
-
-> Note: In order to test the Clerk flow locally `TINA_PUBLIC_IS_LOCAL` is set to true. You can set that to false when not testing the Clerk integration.
-
-## Start the app
 
 ```
 yarn dev
