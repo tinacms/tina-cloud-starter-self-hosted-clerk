@@ -53,6 +53,10 @@ if (!isLocal) {
           },
         },
       });
+      return new Promise(() => {
+          // This promise never resolves because Clerk redirects to
+          // the redirectUrl above
+      })
     },
     getUser: async () => {
       await clerk.load();
