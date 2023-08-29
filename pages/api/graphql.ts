@@ -18,11 +18,16 @@ const isAuthorized = async (req: NextApiRequest) => {
     headerToken: req.headers["authorization"],
   });
   if (requestState.status === "signed-in") {
-    const user = await clerk.users.getUser(requestState.toAuth().userId);
-    const primaryEmail = user.emailAddresses.find(
-      ({ id }) => id === user.primaryEmailAddressId
-    );
-    if (primaryEmail && isUserAllowed(primaryEmail.emailAddress)) {
+    const orgs = await clerk.users.getOrganizationMembershipList({
+      userId: requestState.toAuth().userId,
+    });
+    if (
+      orgs.find(
+        (organizationMembership) =>
+          organizationMembership.organization.id ===
+          process.env.TINA_PUBLIC_CLERK_ORG_ID
+      )
+    ) {
       return true;
     }
   }

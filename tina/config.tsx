@@ -7,18 +7,6 @@ import { ColorPickerInput } from "./fields/color";
 import { iconSchema } from "../components/util/icon";
 import Clerk from "@clerk/clerk-js";
 
-/**
- * For premium Clerk users, you can use restrictions
- * https://clerk.com/docs/authentication/allowlist
- */
-export const isUserAllowed = (emailAddress: string) => {
-  const allowList = [process.env.TINA_PUBLIC_ALLOWED_EMAIL];
-  if (allowList.includes(emailAddress)) {
-    return true;
-  }
-  return false;
-};
-
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === "true";
 let clerk: Clerk | null = null;
 let auth: Config["admin"]["auth"];
@@ -56,9 +44,13 @@ if (!isLocal) {
     },
     getUser: async () => {
       await clerk.load();
-      console.log("info", clerk);
       if (clerk.user) {
-        if (isUserAllowed(clerk.user.primaryEmailAddress.emailAddress)) {
+        const org = clerk.user.organizationMemberships.find(
+          (organizationMembership) =>
+            organizationMembership.organization.id ===
+            process.env.TINA_PUBLIC_CLERK_ORG_ID
+        );
+        if (org) {
           return true;
         }
         // Handle when a user is logged in outside of the org
