@@ -18,9 +18,9 @@ Copy the `.env.example` file to `env`
 cp .env.example .env
 ```
 
-Be sure to set the `TINA_PUBLIC_ALLOWED_EMAIL` env to the email you will use to sign with.
-
 Visit [clerk.com](https://clerk.com/) to create an account and an "application". Once you've done that, navigate to the API Keys tab to find your credentials and store them in the .env file in your project.
+
+Create an organization in Clerk. Store the organization ID as the `TINA_PUBLIC_CLERK_ORG_ID` environment variable.
 
 ```
 yarn dev:prod
