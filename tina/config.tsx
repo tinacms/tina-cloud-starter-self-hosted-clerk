@@ -6,68 +6,40 @@ import { testimonialBlockSchema } from "../components/blocks/testimonial";
 import { ColorPickerInput } from "./fields/color";
 import { iconSchema } from "../components/util/icon";
 import Clerk from "@clerk/clerk-js";
+import { ClerkProvider } from 'tinacms-clerk'
+
+class MyClerkProvider extends ClerkProvider {
+  async authorize(context?: any): Promise<any> {
+    await this.clerk.load();
+    if (this.clerk.user) {
+      const org = this.clerk.user.organizationMemberships.find(
+        (organizationMembership) =>
+          organizationMembership.organization.id ===
+          process.env.TINA_PUBLIC_CLERK_ORG_ID
+      );
+      if (org) {
+        return true;
+      }
+      // Handle when a user is logged in outside of the org
+      await this.clerk.session.end();
+    }
+    return false;
+  }
+  async getUser() {
+    await this.clerk.load()
+    return this.clerk.user
+  }
+}
 
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === "true";
-let clerk: Clerk | null = null;
-let auth: Config["admin"]["auth"];
+let authProvider: Config["authProvider"]
 if (!isLocal) {
-  clerk = new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY);
-  auth = {
-    useLocalAuth: false,
-    customAuth: true,
-    getToken: async () => {
-      await clerk.load();
-      if (clerk.session) {
-        return { id_token: await clerk.session.getToken() };
-      }
-    },
-    logout: async () => {
-      await clerk.load();
-      await clerk.session.remove();
-    },
-    authenticate: async () => {
-      clerk.openSignIn({
-        redirectUrl: "/admin/index.html", // This should be the Tina admin path
-        appearance: {
-          elements: {
-            // Tina's sign in modal is in the way without this
-            modalBackdrop: { zIndex: 20000 },
-            // Some styles clash with Tina's styling
-            socialButtonsBlockButton: "px-4 py-2 border border-gray-100",
-            formFieldInput: `px-4 py-2`,
-            formButtonPrimary: "bg-blue-600 text-white p-4",
-            formFieldInputShowPasswordButton: "m-2",
-            dividerText: "px-2",
-          },
-        },
-      });
-    },
-    getUser: async () => {
-      await clerk.load();
-      if (clerk.user) {
-        const org = clerk.user.organizationMemberships.find(
-          (organizationMembership) =>
-            organizationMembership.organization.id ===
-            process.env.TINA_PUBLIC_CLERK_ORG_ID
-        );
-        if (org) {
-          return true;
-        }
-        // Handle when a user is logged in outside of the org
-        clerk.session.end();
-      }
-      return false;
-    },
-  };
-} else {
-  auth = { useLocalAuth: true };
+  authProvider = new MyClerkProvider({ clerk: new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY) })
 }
 
 const config = defineConfig({
+  authProvider,
   contentApiUrlOverride: "/api/graphql",
-  admin: {
-    auth,
-  },
   media: {
     // If you wanted cloudinary do this
     // loadCustomStore: async () => {
