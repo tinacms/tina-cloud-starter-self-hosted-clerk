@@ -9,16 +9,16 @@ import Clerk from "@clerk/clerk-js";
 import { ClerkProvider } from 'tinacms-clerk'
 
 class MyClerkProvider extends ClerkProvider {
+  private readonly isMember: (email: string) => Promise<boolean> | undefined
+  constructor(clerk: Clerk, isMember: (email: string) => Promise<boolean>) {
+   super({clerk})
+   this.isMember = isMember
+  }
   async authorize(context?: any): Promise<any> {
     await this.clerk.load();
     if (this.clerk.user) {
-      const org = this.clerk.user.organizationMemberships.find(
-        (organizationMembership) =>
-          organizationMembership.organization.id ===
-          process.env.TINA_PUBLIC_CLERK_ORG_ID
-      );
-      if (org) {
-        return true;
+      if (await this.isMember?.(this.clerk.user.primaryEmailAddress.emailAddress)) {
+        return true
       }
       // Handle when a user is logged in outside of the org
       await this.clerk.session.end();
@@ -34,7 +34,12 @@ class MyClerkProvider extends ClerkProvider {
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === "true";
 let authProvider: Config["authProvider"]
 if (!isLocal) {
-  authProvider = new MyClerkProvider({ clerk: new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY) })
+  authProvider = new MyClerkProvider(new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY), async (email: string) => {
+    const client = await import('./__generated__/client')
+    const result = await client.client.queries.users({ relativePath: 'index.json' })
+    const users = result?.data?.users?.users
+    return !!users.find((user) => user.email === email )
+  })
 }
 
 const config = defineConfig({
@@ -171,6 +176,44 @@ const config = defineConfig({
             isBody: true,
           },
         ],
+      },
+      {
+        label: "Users",
+        name: "users",
+        path: "content/users",
+        format: "json",
+        ui: {
+          global: true,
+          allowedActions: {
+            create: false,
+            delete: false,
+          }
+        },
+        fields: [
+          {
+            type: "object",
+            label: "Users",
+            name: "users",
+            list: true,
+            fields: [
+              {
+                type: "string",
+                label: "Name",
+                name: "name"
+              },
+              {
+                type: "string",
+                label: "Email",
+                name: "email"
+              }
+            ],
+            ui: {
+              itemProps: (item) => {
+                return { label: item?.name };
+              },
+            }
+          }
+        ]
       },
       {
         label: "Global",
