@@ -36,8 +36,14 @@ let authProvider: Config["authProvider"]
 if (!isLocal) {
   authProvider = new MyClerkProvider(new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY), async (email: string) => {
     const client = await import('./__generated__/client')
-    const result = await client.client.queries.users({ relativePath: 'index.json' })
-    const users = result?.data?.users?.users
+    let result
+    try {
+      result = await client.client.queries.users({ relativePath: 'index.json' })
+    } catch (e) {
+      // TODO this should specifically catch 401
+      console.log(e)
+    }
+    const users = result?.data?.users?.users || []
     return !!users.find((user) => user.email === email )
   })
 }
