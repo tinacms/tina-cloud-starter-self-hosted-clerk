@@ -4536,6 +4536,13 @@
     yup "^1.6.1"
     zod "^3.24.2"
 
+"@tinacms/datalayer@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@tinacms/datalayer/-/datalayer-2.0.3.tgz#997c2dcd0c33b0c61926f6f55eb5338c358c0534"
+  integrity sha512-YVdasjwHspY5+Xz8Kprjoh7J0dVWz7jOSxxQkGgibcnJj1sEurwEedIS5eaEpcsn67Ax2JMbfAS95hkTTMOLNw==
+  dependencies:
+    "@tinacms/graphql" "2.0.3"
+
 "@tinacms/graphql@1.6.3":
   version "1.6.3"
   resolved "https://registry.yarnpkg.com/@tinacms/graphql/-/graphql-1.6.3.tgz#276f16a4e797a2b1fd5dabffcd0f276b4444a621"

@@ -28,6 +28,7 @@
     "typescript-eslint": "^8.50.1"
   },
   "dependencies": {
+    "@tinacms/datalayer": "^2.0.3",
     "@clerk/backend": "^0.27.0",
     "@clerk/clerk-js": "^4.73.14",
     "@clerk/themes": "^1.7.20",
