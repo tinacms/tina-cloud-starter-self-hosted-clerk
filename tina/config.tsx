@@ -1,4 +1,6 @@
-import { Config, defineConfig } from "tinacms";
+import { defineConfig } from "tinacms";
+import { LocalAuthProvider, AbstractAuthProvider } from "tinacms";
+import type { AuthProvider } from "@tinacms/schema-tools";
 import { contentBlockSchema } from "../components/blocks/content";
 import { featureBlockSchema } from "../components/blocks/features";
 import { heroBlockSchema } from "../components/blocks/hero";
@@ -20,66 +22,63 @@ export const isUserAllowed = (emailAddress: string) => {
 };
 
 const isLocal = process.env.TINA_PUBLIC_IS_LOCAL === "true";
-let clerk: Clerk | null = null;
-let auth: Config["admin"]["auth"];
-if (!isLocal) {
-  clerk = new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY);
-  auth = {
-    useLocalAuth: false,
-    customAuth: true,
-    getToken: async () => {
-      await clerk.load();
-      if (clerk.session) {
-        return { id_token: await clerk.session.getToken() };
-      }
-    },
-    logout: async () => {
-      await clerk.load();
-      await clerk.session.remove();
-    },
-    authenticate: async () => {
-      clerk.openSignIn({
-        redirectUrl: "/admin/index.html", // This should be the Tina admin path
-        appearance: {
-          elements: {
-            // Tina's sign in modal is in the way without this
-            modalBackdrop: { zIndex: 20000 },
-            // Some styles clash with Tina's styling
-            socialButtonsBlockButton: "px-4 py-2 border border-gray-100",
-            formFieldInput: `px-4 py-2`,
-            formButtonPrimary: "bg-blue-600 text-white p-4",
-            formFieldInputShowPasswordButton: "m-2",
-            dividerText: "px-2",
-          },
+
+class ClerkAuthProvider extends AbstractAuthProvider {
+  clerk: Clerk;
+
+  constructor() {
+    super();
+    this.clerk = new Clerk(process.env.TINA_PUBLIC_CLERK_PUBLIC_KEY);
+  }
+
+  async getToken() {
+    await this.clerk.load();
+    if (this.clerk.session) {
+      return { id_token: await this.clerk.session.getToken() };
+    }
+    return null;
+  }
+
+  async logout() {
+    await this.clerk.load();
+    await this.clerk.session?.remove();
+  }
+
+  async authenticate() {
+    this.clerk.openSignIn({
+      redirectUrl: "/admin/index.html",
+      appearance: {
+        elements: {
+          modalBackdrop: { zIndex: 20000 },
+          socialButtonsBlockButton: "px-4 py-2 border border-gray-100",
+          formFieldInput: `px-4 py-2`,
+          formButtonPrimary: "bg-blue-600 text-white p-4",
+          formFieldInputShowPasswordButton: "m-2",
+          dividerText: "px-2",
         },
-      });
-      return new Promise(() => {
-          // This promise never resolves because Clerk redirects to
-          // the redirectUrl above
-      })
-    },
-    getUser: async () => {
-      await clerk.load();
-      console.log("info", clerk);
-      if (clerk.user) {
-        if (isUserAllowed(clerk.user.primaryEmailAddress.emailAddress)) {
-          return true;
-        }
-        // Handle when a user is logged in outside of the org
-        clerk.session.end();
+      },
+    });
+    return new Promise(() => {});
+  }
+
+  async getUser() {
+    await this.clerk.load();
+    if (this.clerk.user) {
+      if (isUserAllowed(this.clerk.user.primaryEmailAddress?.emailAddress)) {
+        return true;
       }
-      return false;
-    },
-  };
-} else {
-  auth = { useLocalAuth: true };
+      this.clerk.session?.end();
+    }
+    return false;
+  }
 }
+
+const authProvider: AuthProvider = isLocal ? new LocalAuthProvider() : new ClerkAuthProvider();
 
 const config = defineConfig({
   contentApiUrlOverride: "/api/graphql",
-  admin: {
-    auth,
-  },
+  authProvider,
+  admin: {},
   media: {
     // If you wanted cloudinary do this
     // loadCustomStore: async () => {
